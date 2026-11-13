@@ -19,8 +19,14 @@ interface AppearanceBody {
 
 interface LocationPatch {
   name?: string; status?: 'active' | 'inactive'; qrEnabled?: boolean; kioskEnabled?: boolean;
-  qrAutoAccept?: boolean; kioskAutoAccept?: boolean;
+  qrAutoAccept?: boolean; kioskAutoAccept?: boolean; printerHost?: string | null; printerPort?: number;
+  printerCodepage?: number; ticketQr?: boolean; prepMinutesEstimate?: number;
 }
+
+const LOC_COLS = `l.id, l.slug, l.name, l.status, l.qr_enabled AS "qrEnabled", l.kiosk_enabled AS "kioskEnabled",
+  l.qr_auto_accept AS "qrAutoAccept", l.kiosk_auto_accept AS "kioskAutoAccept", l.payment_mode AS "paymentMode",
+  l.printer_host AS "printerHost", l.printer_port AS "printerPort", l.printer_codepage AS "printerCodepage",
+  l.ticket_qr AS "ticketQr", l.prep_minutes_estimate AS "prepMinutesEstimate"`;
 
 export class BrandError extends Error {
   constructor(public issues: ReturnType<typeof validateBrand>) { super('invalid_brand'); }
@@ -40,9 +46,9 @@ export async function settingsRoutes(app: FastifyInstance) {
       `SELECT theme, brand, default_locale AS "defaultLocale", enabled_locales AS "enabledLocales", currency
        FROM businesses WHERE id = $1`, [bid(req)])).rows[0];
     const locations = (await tx.query(
-      `SELECT id, slug, name, status, qr_enabled AS "qrEnabled", kiosk_enabled AS "kioskEnabled",
-         qr_auto_accept AS "qrAutoAccept", kiosk_auto_accept AS "kioskAutoAccept", payment_mode AS "paymentMode"
-       FROM locations ORDER BY name`)).rows;
+      `SELECT ${LOC_COLS},
+         (SELECT d.hostname FROM domains d WHERE d.location_id = l.id ORDER BY d.created_at LIMIT 1) AS hostname
+       FROM locations l ORDER BY l.name`)).rows;
     return { ...b, brand: { ...DEFAULT_BRAND, ...b.brand }, locations };
   }));
 
@@ -89,17 +95,23 @@ export async function settingsRoutes(app: FastifyInstance) {
       name: { type: 'string', minLength: 1, maxLength: 120 }, status: { type: 'string', enum: ['active', 'inactive'] },
       qrEnabled: { type: 'boolean' }, kioskEnabled: { type: 'boolean' },
       qrAutoAccept: { type: 'boolean' }, kioskAutoAccept: { type: 'boolean' },
+      printerHost: { type: ['string', 'null'], maxLength: 100, pattern: '^[a-zA-Z0-9.:-]*$' },
+      printerPort: { type: 'integer', minimum: 1, maximum: 65535 },
+      printerCodepage: { type: 'integer', minimum: 0, maximum: 255 }, ticketQr: { type: 'boolean' },
+      prepMinutesEstimate: { type: 'integer', minimum: 1, maximum: 180 },
     } } } }, (req) => withScope(db, { businessId: bid(req) }, async (tx) => {
     const b = req.body;
     const { rows } = await tx.query(
-      `UPDATE locations SET name = coalesce($2, name), status = coalesce($3, status),
+      `UPDATE locations l SET name = coalesce($2, name), status = coalesce($3, status),
          qr_enabled = coalesce($4, qr_enabled), kiosk_enabled = coalesce($5, kiosk_enabled),
-         qr_auto_accept = coalesce($6, qr_auto_accept), kiosk_auto_accept = coalesce($7, kiosk_auto_accept)
-       WHERE id = $1
-       RETURNING id, slug, name, status, qr_enabled AS "qrEnabled", kiosk_enabled AS "kioskEnabled",
-         qr_auto_accept AS "qrAutoAccept", kiosk_auto_accept AS "kioskAutoAccept"`,
+         qr_auto_accept = coalesce($6, qr_auto_accept), kiosk_auto_accept = coalesce($7, kiosk_auto_accept),
+         printer_host = CASE WHEN $8 THEN nullif($9, '') ELSE printer_host END,
+         printer_port = coalesce($10, printer_port), printer_codepage = coalesce($11, printer_codepage),
+         ticket_qr = coalesce($12, ticket_qr), prep_minutes_estimate = coalesce($13, prep_minutes_estimate)
+       WHERE id = $1 RETURNING ${LOC_COLS}`,
       [req.params.id, b.name ?? null, b.status ?? null, b.qrEnabled ?? null, b.kioskEnabled ?? null,
-        b.qrAutoAccept ?? null, b.kioskAutoAccept ?? null]);
+        b.qrAutoAccept ?? null, b.kioskAutoAccept ?? null, b.printerHost !== undefined, b.printerHost ?? null,
+        b.printerPort ?? null, b.printerCodepage ?? null, b.ticketQr ?? null, b.prepMinutesEstimate ?? null]);
     if (!rows[0]) throw new AuthError('not_found', 404);
     await audit(tx, bid(req), { action: 'settings.location_updated', actorId: req.session!.user.id,
       targetType: 'location', targetId: req.params.id, data: { ...b }, ip: req.ip });

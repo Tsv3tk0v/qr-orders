@@ -168,7 +168,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       kind: 'business',
       business: { slug: b.slug, name: b.name, theme: b.theme, defaultLocale: b.defaultLocale,
         enabledLocales: b.enabledLocales, currency: b.currency, brand: { ...DEFAULT_BRAND, ...b.brand } },
-      location: l && { slug: l.slug, name: l.name, qrEnabled: l.qrEnabled, kioskEnabled: l.kioskEnabled },
+      location: l && { slug: l.slug, name: l.name, qrEnabled: l.qrEnabled, kioskEnabled: l.kioskEnabled,
+        prepMinutes: l.prepMinutesEstimate },
     };
   });
 

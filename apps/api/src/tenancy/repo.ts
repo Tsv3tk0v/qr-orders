@@ -29,6 +29,7 @@ export interface Location {
   kioskAutoAccept: boolean;
   paymentMode: PaymentMode;
   orderResetHour: number;
+  prepMinutesEstimate: number;
 }
 
 const BUSINESS_COLS = `id, slug, name, status, default_locale AS "defaultLocale", theme, brand,
@@ -36,7 +37,8 @@ const BUSINESS_COLS = `id, slug, name, status, default_locale AS "defaultLocale"
 const LOCATION_COLS = `id, business_id AS "businessId", slug, name, status, timezone,
   qr_enabled AS "qrEnabled", kiosk_enabled AS "kioskEnabled",
   qr_auto_accept AS "qrAutoAccept", kiosk_auto_accept AS "kioskAutoAccept",
-  payment_mode AS "paymentMode", order_reset_hour AS "orderResetHour"`;
+  payment_mode AS "paymentMode", order_reset_hour AS "orderResetHour",
+  prep_minutes_estimate AS "prepMinutesEstimate"`;
 
 export class ValidationError extends Error {}
 
