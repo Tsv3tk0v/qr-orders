@@ -28,7 +28,8 @@ export async function processSftpFolders(db: Db, root: string, now = Date.now())
   const results: FolderResult[] = [];
   for (const b of businesses) {
     const dir = join(root, b.slug);
-    await ensureBusinessFolders(root, b.slug);
+    // Папките се създават от „qr sftp-add“ (с права за chroot); без тях бизнесът се пропуска.
+    if (!(await stat(join(dir, 'import')).catch(() => null))?.isDirectory()) continue;
     const files = [];
     for (const name of await readdir(join(dir, 'import'))) {
       if (!/\.(csv|xlsx)$/i.test(name) || name.startsWith('.')) continue;

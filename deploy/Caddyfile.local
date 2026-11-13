@@ -1,0 +1,7 @@
+# Пробен режим в локалната мрежа: само http, без сертификати.
+:80 {
+	encode gzip
+	reverse_proxy app:3000 {
+		flush_interval -1
+	}
+}

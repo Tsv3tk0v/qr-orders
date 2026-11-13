@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Db } from '../src/db/pool';
 import { parseCsv } from '../src/menu/import/parse';
-import { processSftpFolders } from '../src/menu/import/sftp';
+import { ensureBusinessFolders, processSftpFolders } from '../src/menu/import/sftp';
 import { loggedIn, makeApp, type Client } from './helpers';
 
 let app: FastifyInstance;
@@ -160,7 +160,7 @@ describe('SFTP папки', () => {
     const now = Date.now();
     const old = new Date(now - 120_000);
 
-    await processSftpFolders(db, root, now); // създава папките
+    await ensureBusinessFolders(root, business.slug);
     await writeFile(join(dir, 'import', 'artikuli.csv'), cp1251(FILE1));
     await writeFile(join(dir, 'import', 'bad.csv'), 'код;наименование;цена\nxx;А;1\n');
     await writeFile(join(dir, 'import', 'fresh.csv'), FILE1);
