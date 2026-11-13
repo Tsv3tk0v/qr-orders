@@ -13,4 +13,5 @@ export const env = {
   get databaseUrl() { return required('DATABASE_URL'); },
   get migrationDatabaseUrl() { return required('MIGRATION_DATABASE_URL'); },
   get baseDomain() { return required('BASE_DOMAIN'); },
+  get secretsKey() { return required('SECRETS_KEY'); },
 };

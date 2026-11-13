@@ -1,5 +1,5 @@
 import {
-  businessHostname, isValidSlug, locationHostname, normalizeHostname,
+  businessHostname, isValidSlug, locationHostname, normalizeHostname, RESERVED_SLUGS,
   type Locale, type PaymentMode, type Theme,
 } from '@qr/shared';
 import { withScope, type Db, type Tx } from '../db/pool';
@@ -51,19 +51,23 @@ export interface NewBusiness {
 
 /** Само на ниво платформа. Създава бизнеса и поддомейна му. */
 export async function createBusiness(db: Db, input: NewBusiness, baseDomain: string): Promise<Business> {
+  return withScope(db, { platform: true }, (tx) => insertBusiness(tx, input, baseDomain));
+}
+
+/** Същото, в отворена транзакция с контекст 'platform'. */
+export async function insertBusiness(tx: Tx, input: NewBusiness, baseDomain: string): Promise<Business> {
   assertSlug(input.slug);
-  return withScope(db, { platform: true }, async (tx) => {
-    const { rows } = await tx.query<Business>(
+  if (RESERVED_SLUGS.includes(input.slug)) throw new ValidationError(`„${input.slug}“ е запазено име`);
+  const { rows } = await tx.query<Business>(
       `INSERT INTO businesses (slug, name, default_locale, theme, brand)
        VALUES ($1, $2, $3, $4, $5) RETURNING ${BUSINESS_COLS}`,
-      [input.slug, input.name, input.defaultLocale ?? 'bg', input.theme ?? 'light', input.brand ?? {}],
-    );
-    const business = rows[0]!;
-    await tx.query('INSERT INTO domains (business_id, hostname) VALUES ($1, $2)', [
-      business.id, businessHostname(business.slug, baseDomain),
-    ]);
-    return business;
-  });
+    [input.slug, input.name, input.defaultLocale ?? 'bg', input.theme ?? 'light', input.brand ?? {}],
+  );
+  const business = rows[0]!;
+  await tx.query('INSERT INTO domains (business_id, hostname) VALUES ($1, $2)', [
+    business.id, businessHostname(business.slug, baseDomain),
+  ]);
+  return business;
 }
 
 export interface NewLocation {
@@ -78,22 +82,26 @@ export interface NewLocation {
 export async function createLocation(
   db: Db, businessId: string, input: NewLocation, baseDomain: string,
 ): Promise<Location> {
+  return withScope(db, { businessId }, (tx) => insertLocation(tx, businessId, input, baseDomain));
+}
+
+export async function insertLocation(
+  tx: Tx, businessId: string, input: NewLocation, baseDomain: string,
+): Promise<Location> {
   assertSlug(input.slug);
-  return withScope(db, { businessId }, async (tx) => {
-    const biz = await tx.query<{ slug: string }>('SELECT slug FROM businesses WHERE id = $1', [businessId]);
-    if (!biz.rows[0]) throw new ValidationError('Бизнесът не е намерен');
-    const { rows } = await tx.query<Location>(
-      `INSERT INTO locations (business_id, slug, name, timezone, qr_enabled, kiosk_enabled)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${LOCATION_COLS}`,
-      [businessId, input.slug, input.name, input.timezone ?? 'Europe/Sofia',
-        input.qrEnabled ?? true, input.kioskEnabled ?? false],
-    );
-    const location = rows[0]!;
-    await tx.query('INSERT INTO domains (business_id, location_id, hostname) VALUES ($1, $2, $3)', [
-      businessId, location.id, locationHostname(biz.rows[0].slug, location.slug, baseDomain),
-    ]);
-    return location;
-  });
+  const biz = await tx.query<{ slug: string }>('SELECT slug FROM businesses WHERE id = $1', [businessId]);
+  if (!biz.rows[0]) throw new ValidationError('Бизнесът не е намерен');
+  const { rows } = await tx.query<Location>(
+    `INSERT INTO locations (business_id, slug, name, timezone, qr_enabled, kiosk_enabled)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${LOCATION_COLS}`,
+    [businessId, input.slug, input.name, input.timezone ?? 'Europe/Sofia',
+      input.qrEnabled ?? true, input.kioskEnabled ?? false],
+  );
+  const location = rows[0]!;
+  await tx.query('INSERT INTO domains (business_id, location_id, hostname) VALUES ($1, $2, $3)', [
+    businessId, location.id, locationHostname(biz.rows[0].slug, location.slug, baseDomain),
+  ]);
+  return location;
 }
 
 export async function listLocations(tx: Tx): Promise<Location[]> {

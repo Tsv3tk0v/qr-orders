@@ -33,3 +33,11 @@ export function normalizeHostname(host: string): string {
   if (colon >= 0) h = h.slice(0, colon);
   return h.replace(/\.$/, '');
 }
+
+/** Поддомейни, заети от платформата; не могат да са бизнеси. */
+export const RESERVED_SLUGS: readonly string[] = ['admin', 'api', 'www', 'app', 'static', 'mail'];
+
+/** Хостът на админ панела на платформата. */
+export function platformHostname(baseDomain: string): string {
+  return `admin.${normalizeHostname(baseDomain)}`;
+}
