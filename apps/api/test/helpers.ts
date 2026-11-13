@@ -41,9 +41,10 @@ export class Client {
   cookie = '';
   constructor(private app: FastifyInstance, public host: string) {}
 
-  async req(method: 'GET' | 'POST' | 'PATCH', url: string, body?: unknown, headers: Record<string, string> = {}) {
+  async req(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', url: string, body?: unknown,
+    headers: Record<string, string> = {}) {
     const res = await this.app.inject({
-      method, url, payload: body as object | undefined,
+      method, url, payload: body as object | Buffer | undefined,
       headers: { host: this.host, origin: `https://${this.host}`, cookie: this.cookie, ...headers },
     });
     const set = res.cookies.find((c) => c.name === 'sid');
@@ -53,6 +54,11 @@ export class Client {
   get(url: string) { return this.req('GET', url); }
   post(url: string, body: unknown = {}) { return this.req('POST', url, body); }
   patch(url: string, body: unknown) { return this.req('PATCH', url, body); }
+  put(url: string, body: unknown) { return this.req('PUT', url, body); }
+  del(url: string) { return this.req('DELETE', url); }
+  upload(url: string, content: Buffer, type = 'text/csv') {
+    return this.req('POST', url, content, { 'content-type': type });
+  }
 
   /** Пълен вход с първоначална настройка на 2FA. Връща тайната. */
   async loginAndEnroll(email: string, password = PASSWORD): Promise<string> {
@@ -65,4 +71,12 @@ export class Client {
     expect(v.json()).toEqual({ stage: 'active' });
     return secret;
   }
+}
+
+/** Бизнес с влязъл потребител (по подразбиране собственик). */
+export async function loggedIn(app: FastifyInstance, db: Db, role: 'owner' | 'manager' | 'staff' = 'owner') {
+  const seeded = await seedBusiness(db, role);
+  const client = new Client(app, seeded.host);
+  await client.loginAndEnroll(seeded.email);
+  return { ...seeded, client };
 }

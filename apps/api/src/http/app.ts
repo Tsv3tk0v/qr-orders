@@ -1,12 +1,17 @@
 import cookie from '@fastify/cookie';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
-import { can, normalizeHostname, permissionsOf, platformHostname, type Permission } from '@qr/shared';
+import { can, DEFAULT_BRAND, normalizeHostname, permissionsOf, platformHostname, type Permission } from '@qr/shared';
 import type { Db } from '../db/pool';
 import { AuthError, getSession, type Meta, type Realm, type SessionUser } from '../auth/service';
 import { resolveHost, ValidationError, type Business, type Location } from '../tenancy/repo';
 import { authRoutes } from './routes/auth';
 import { adminRoutes } from './routes/admin';
 import { platformRoutes } from './routes/platform';
+import { menuRoutes } from './routes/menu';
+import { BrandError, settingsRoutes } from './routes/settings';
+import { NotFound, publicMenu } from '../menu/repo';
+import { ImportSettingsError } from '../menu/import/apply';
+import { withScope } from '../db/pool';
 
 export interface AppDeps {
   db: Db;
@@ -113,7 +118,18 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     if ((err as { validation?: unknown }).validation) {
       return reply.code(400).send({ error: 'validation', message: (err as Error).message });
     }
-    if ((err as { code?: string }).code === '23505') return reply.code(409).send({ error: 'conflict' });
+    if (err instanceof NotFound) return reply.code(404).send({ error: 'not_found' });
+    if (err instanceof BrandError) return reply.code(400).send({ error: 'invalid_brand', issues: err.issues });
+    if (err instanceof ImportSettingsError) return reply.code(400).send({ error: err.message });
+    const pgCode = (err as { code?: string }).code;
+    if (pgCode === '23505') return reply.code(409).send({ error: 'conflict' });
+    // Нарушено правило в базата (напр. QR и киоск изключени) или връзка към чужд/липсващ ред.
+    if (pgCode === '23514') return reply.code(400).send({ error: 'validation' });
+    if (pgCode === '23503') return reply.code(400).send({ error: 'invalid_reference' });
+    const status = (err as { statusCode?: number }).statusCode;
+    if (status && status >= 400 && status < 500) {
+      return reply.code(status).send({ error: (err as { code?: string }).code ?? 'bad_request' });
+    }
     req.log.error(err);
     return reply.code(500).send({ error: 'internal' });
   });
@@ -127,7 +143,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const { business: b, location: l } = t;
     return {
       kind: 'business',
-      business: { slug: b.slug, name: b.name, theme: b.theme, defaultLocale: b.defaultLocale, brand: b.brand },
+      business: { slug: b.slug, name: b.name, theme: b.theme, defaultLocale: b.defaultLocale,
+        enabledLocales: b.enabledLocales, currency: b.currency, brand: { ...DEFAULT_BRAND, ...b.brand } },
       location: l && { slug: l.slug, name: l.name, qrEnabled: l.qrEnabled, kioskEnabled: l.kioskEnabled },
     };
   });
@@ -142,7 +159,16 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     };
   });
 
+  /** Менюто за клиента: видими и одобрени артикули на двата езика. */
+  app.get('/api/menu', async (req) => {
+    const t = req.tenant;
+    if (t.kind !== 'business') throw new AuthError('not_found', 404);
+    return withScope(deps.db, { businessId: t.business.id }, publicMenu);
+  });
+
   await app.register(authRoutes, { prefix: '/api/auth' });
+  await app.register(menuRoutes, { prefix: '/api/admin/menu' });
+  await app.register(settingsRoutes, { prefix: '/api/admin/settings' });
   await app.register(adminRoutes, { prefix: '/api/admin' });
   await app.register(platformRoutes, { prefix: '/api/platform' });
   return app;

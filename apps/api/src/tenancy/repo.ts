@@ -12,6 +12,8 @@ export interface Business {
   defaultLocale: Locale;
   theme: Theme;
   brand: Record<string, unknown>;
+  enabledLocales: Locale[];
+  currency: string;
 }
 
 export interface Location {
@@ -29,7 +31,8 @@ export interface Location {
   orderResetHour: number;
 }
 
-const BUSINESS_COLS = `id, slug, name, status, default_locale AS "defaultLocale", theme, brand`;
+const BUSINESS_COLS = `id, slug, name, status, default_locale AS "defaultLocale", theme, brand,
+  enabled_locales AS "enabledLocales", currency`;
 const LOCATION_COLS = `id, business_id AS "businessId", slug, name, status, timezone,
   qr_enabled AS "qrEnabled", kiosk_enabled AS "kioskEnabled",
   qr_auto_accept AS "qrAutoAccept", kiosk_auto_accept AS "kioskAutoAccept",
