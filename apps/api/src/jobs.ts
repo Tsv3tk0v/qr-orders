@@ -47,14 +47,20 @@ const sofia = (d = new Date()) => {
   return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) % 24 };
 };
 
-/** Дневен имейл до собствениците в избрания час (по София). */
+/** Работният ден започва в 04:00 (реш. 6), затова отчетът „живее“ в часовник, изместен с 4 часа. */
+export const DAY_START_HOUR = 4;
+
+/**
+ * Дневен имейл до собствениците в избрания час (по София) за текущия работен ден.
+ * Пример: час 22 → праща се между 22:00 и 03:59 за деня, започнал в 04:00.
+ */
 export async function dailyEmails(db: Db, mailer: Mailer, now = new Date()): Promise<number> {
-  const { date, hour } = sofia(now);
+  const { date, hour } = sofia(new Date(now.getTime() - DAY_START_HOUR * 3_600_000));
   const due = await withScope(db, { platform: true }, async (tx) => (await tx.query<{ id: string; name: string }>(
     `SELECT b.id, b.name FROM businesses b
-     WHERE b.status = 'active' AND b.daily_email AND b.daily_email_hour <= $1
+     WHERE b.status = 'active' AND b.daily_email AND (b.daily_email_hour + 24 - $3) % 24 <= $1
        AND NOT EXISTS (SELECT 1 FROM daily_reports r WHERE r.business_id = b.id AND r.day = $2)`,
-    [hour, date])).rows);
+    [hour, date, DAY_START_HOUR])).rows);
   let sent = 0;
   for (const b of due) {
     await withScope(db, { businessId: b.id }, async (tx) => {

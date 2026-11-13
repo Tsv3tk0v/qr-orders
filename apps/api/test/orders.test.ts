@@ -230,7 +230,10 @@ describe('фонови задачи', () => {
     await sweep(db);
     expect((await s.client.get('/api/admin/orders')).json()[0].status).toBe('collected');
 
-    await s.client.patch('/api/admin/business', { dailyEmailHour: 0 });
+    // Часът за изпращане = сегашният час в София → имейлът е „на ред“ точно сега.
+    const sofiaHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Sofia', hour: '2-digit', hour12: false })
+      .format(new Date())) % 24;
+    await s.client.patch('/api/admin/business', { dailyEmailHour: sofiaHour });
     const sent: { to: string[]; subject: string; text: string }[] = [];
     const mailer = { send: async (to: string[], subject: string, text: string) => { sent.push({ to, subject, text }); } };
     await dailyEmails(db, mailer);

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QR Orders — device</string>
+    <string name="setup_title">Device setup</string>
+    <string name="setup_url">Location address (e.g. https://donerdvor.poruchki.bg)</string>
+    <string name="setup_pin">Exit PIN (4 digits)</string>
+    <string name="setup_save">Save and open</string>
+    <string name="setup_exit">Exit the app</string>
+    <string name="setup_bad_url">Enter an address starting with https://</string>
+    <string name="setup_bad_pin">The PIN must be 4 digits</string>
+    <string name="pin_title">Settings PIN</string>
+    <string name="pin_wrong">Wrong PIN</string>
+    <string name="offline_title">No connection</string>
+    <string name="offline_text">Please order at the counter. Retrying…</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+</resources>

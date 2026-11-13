@@ -65,7 +65,14 @@ function Businesses({ baseDomain }: { baseDomain: string }) {
       <table className="table">
         <tbody>{data?.map((b) => (
           <tr key={b.id}><td><strong>{b.name}</strong><br /><small className="mono muted">{b.slug}.{baseDomain}</small></td>
-            <td>{b.status}</td><td><a className="btn btn-ghost btn-sm" href={url(b.slug)} target="_blank" rel="noreferrer">{t('plat.open')} ↗</a></td></tr>
+            <td>{b.status}</td>
+            <td className="row"><a className="btn btn-ghost btn-sm" href={url(b.slug)} target="_blank" rel="noreferrer">{t('plat.open')} ↗</a>
+              <button className="link-btn" onClick={async () => {
+                const email = prompt(t('plat.owner')); if (!email) return;
+                const password = prompt(t('plat.ownerPass')); if (!password) return;
+                try { await api.post(`/api/platform/businesses/${b.id}/owner`, { email, password }); alert(t('plat.ownerResetDone')); }
+                catch (e) { setError(e); }
+              }}>{t('plat.ownerReset')}</button></td></tr>
         ))}</tbody>
       </table>
       {created && <Notice kind="ok">{t('plat.created')} <a href={created} target="_blank" rel="noreferrer" className="mono">{created}</a></Notice>}

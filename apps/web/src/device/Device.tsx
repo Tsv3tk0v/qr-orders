@@ -44,6 +44,10 @@ export function Pair() {
   const nav = useNavigate();
   const [code, setCode] = useState('');
   const [error, setError] = useState<unknown>(null);
+  // Вече свързано устройство (напр. след рестарт на таблета) отива направо на екрана си.
+  useEffect(() => {
+    api.get<DeviceMe>('/api/device/me').then((d) => nav(`/${d.device.kind}`, { replace: true })).catch(() => {});
+  }, [nav]);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

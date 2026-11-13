@@ -141,6 +141,12 @@ describe('роли и потребители', () => {
     expect((await staff.post('/api/auth/login', { email: staffEmail, password: PASSWORD })).json())
       .toEqual({ stage: 'enroll_2fa' });
 
+    // Нова временна парола от собственика.
+    expect((await owner.patch(`/api/admin/users/${staffId}`, { password: 'къса' })).statusCode).toBe(400);
+    await owner.patch(`/api/admin/users/${staffId}`, { password: 'нова-временна-парола' });
+    expect((await staff.post('/api/auth/login', { email: staffEmail, password: PASSWORD })).statusCode).toBe(401);
+    expect((await staff.post('/api/auth/login', { email: staffEmail, password: 'нова-временна-парола' })).statusCode).toBe(200);
+
     // Деактивиран потребител не може да влезе.
     await owner.patch(`/api/admin/users/${staffId}`, { active: false });
     expect((await staff.post('/api/auth/login', { email: staffEmail, password: PASSWORD })).statusCode).toBe(401);
@@ -214,5 +220,14 @@ describe('платформа', () => {
     expect((await owner.get('/api/platform/businesses')).statusCode).toBe(404);
     expect((await p.get('/api/admin/users')).statusCode).toBe(404);
     expect((await p.get('/api/platform/audit')).json()[0].action).toBe('business.created');
+
+    // Нов достъп за собственика: нова парола, 2FA се настройва наново.
+    const bizId = res.json().business.id;
+    expect((await p.post(`/api/platform/businesses/${bizId}/owner`, { email: `owner@${slug}.bg`, password: 'съвсем-нова-парола' }))
+      .json()).toMatchObject({ role: 'owner', totpEnabled: false });
+    const again = new Client(app, `${slug}.${BASE}`);
+    expect((await again.post('/api/auth/login', { email: `owner@${slug}.bg`, password: 'съвсем-нова-парола' })).json())
+      .toEqual({ stage: 'enroll_2fa' });
+    expect((await owner.get('/api/auth/me')).statusCode).toBe(401); // старите сесии са затворени
   });
 });

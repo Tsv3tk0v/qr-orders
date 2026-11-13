@@ -144,6 +144,7 @@ const bg = {
   'users.role.manager': 'Мениджър', 'users.role.staff': 'Персонал', 'users.role.platform_admin': 'Админ на платформата',
   'users.twofa': '2FA', 'users.active': 'Активен', 'users.reset2fa': 'Нулирай 2FA', 'users.deactivate': 'Деактивирай',
   'users.activate': 'Активирай', 'users.tempPassword': 'Временна парола (поне 10 знака)', 'users.name': 'Име',
+  'users.newPassword': 'Нова парола', 'users.passwordSet': 'Паролата е сменена. Потребителят влиза с новата парола.',
   // сигурност
   'sec.title': 'Сигурност', 'sec.audit': 'Журнал на действията', 'sec.when': 'Кога', 'sec.who': 'Кой',
   'sec.action': 'Действие', 'sec.ip': 'IP',
@@ -165,6 +166,7 @@ const bg = {
   'plat.name': 'Име на бизнеса', 'plat.owner': 'Имейл на собственика', 'plat.ownerPass': 'Временна парола на собственика',
   'plat.location': 'Първи обект', 'plat.locSlug': 'Кратко име на обекта', 'plat.locName': 'Име на обекта',
   'plat.created': 'Бизнесът е създаден. Адрес на админ панела:', 'plat.open': 'Отвори', 'plat.status': 'Статус',
+  'plat.ownerReset': 'Нов достъп за собственика', 'plat.ownerResetDone': 'Готово. Собственикът влиза с новата парола и настройва двуфакторния вход наново.',
   // грешки
   'err.generic': 'Нещо се обърка. Опитайте отново.', 'err.invalid_credentials': 'Грешен имейл или парола.',
   'err.locked': 'Профилът е заключен за 15 минути след много грешни опити.', 'err.invalid_code': 'Грешен код.',
@@ -309,6 +311,7 @@ const en: Dict = {
   'users.role.manager': 'Manager', 'users.role.staff': 'Staff', 'users.role.platform_admin': 'Platform admin',
   'users.twofa': '2FA', 'users.active': 'Active', 'users.reset2fa': 'Reset 2FA', 'users.deactivate': 'Deactivate',
   'users.activate': 'Activate', 'users.tempPassword': 'Temporary password (at least 10 characters)', 'users.name': 'Name',
+  'users.newPassword': 'New password', 'users.passwordSet': 'Password changed. The user signs in with the new password.',
   'sec.title': 'Security', 'sec.audit': 'Activity log', 'sec.when': 'When', 'sec.who': 'Who',
   'sec.action': 'Action', 'sec.ip': 'IP',
   'orders.title': 'Orders', 'orders.day': 'Day', 'orders.number': '#', 'orders.channel': 'Channel',
@@ -326,6 +329,7 @@ const en: Dict = {
   'plat.name': 'Business name', 'plat.owner': 'Owner email', 'plat.ownerPass': 'Owner temporary password',
   'plat.location': 'First location', 'plat.locSlug': 'Location short name', 'plat.locName': 'Location name',
   'plat.created': 'The business was created. Admin panel address:', 'plat.open': 'Open', 'plat.status': 'Status',
+  'plat.ownerReset': 'New owner access', 'plat.ownerResetDone': 'Done. The owner signs in with the new password and sets up two-factor sign-in again.',
   'err.generic': 'Something went wrong. Please try again.', 'err.invalid_credentials': 'Wrong email or password.',
   'err.locked': 'The account is locked for 15 minutes after too many attempts.', 'err.invalid_code': 'Wrong code.',
   'err.weak_password': 'The password must be at least 10 characters.', 'err.email_taken': 'This email already exists.',

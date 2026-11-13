@@ -259,6 +259,10 @@ function Users({ me }: { me: Me }) {
             <td>{u.active ? '✓' : '—'}</td>
             <td>{u.id !== me.user.id && <span className="row">
               <button className="link-btn" onClick={() => patch(u.id, { reset2fa: true })}>{t('users.reset2fa')}</button>
+              <button className="link-btn" onClick={() => {
+                const pw = prompt(t('users.tempPassword'));
+                if (pw) api.patch(`/api/admin/users/${u.id}`, { password: pw }).then(() => { alert(t('users.passwordSet')); reload(); }).catch(setError);
+              }}>{t('users.newPassword')}</button>
               <button className="link-btn" onClick={() => patch(u.id, { active: !u.active })}>{u.active ? t('users.deactivate') : t('users.activate')}</button>
             </span>}</td>
           </tr>

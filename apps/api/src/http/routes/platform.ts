@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { LOCALES, THEMES, type Locale, type Theme } from '@qr/shared';
 import { withScope } from '../../db/pool';
-import { AuthError, audit, insertUser, listAudit } from '../../auth/service';
+import { AuthError, audit, insertUser, listAudit, resetAccess } from '../../auth/service';
 import { insertBusiness, insertLocation } from '../../tenancy/repo';
 import { requireAuth } from '../app';
 
@@ -52,6 +52,23 @@ export async function platformRoutes(app: FastifyInstance) {
     });
     return reply.code(201).send(result);
   });
+
+  /** Нов достъп за собственика (забравена парола или изгубен телефон). */
+  app.post<{ Params: { id: string }; Body: { email: string; password: string } }>('/businesses/:id/owner', {
+    preHandler: requireAuth(),
+    schema: { params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } } },
+      body: { type: 'object', required: ['email', 'password'], additionalProperties: false, properties: {
+        email: { type: 'string', maxLength: 254 }, password: { type: 'string', maxLength: 200 } } } },
+  }, async (req) => withScope(db, { platform: true }, async (tx) => {
+    const exists = await tx.query('SELECT 1 FROM businesses WHERE id = $1', [req.params.id]);
+    if (!exists.rows.length) throw new AuthError('not_found', 404);
+    const u = await resetAccess(tx, req.params.id, req.body.email, req.body.password, 'owner');
+    await audit(tx, null, { action: 'business.owner_reset', actorId: req.session!.user.id, targetType: 'user',
+      targetId: u.id, ip: req.ip });
+    await audit(tx, req.params.id, { action: 'user.access_reset', targetType: 'user', targetId: u.id,
+      data: { by: 'platform' }, ip: req.ip });
+    return u;
+  }));
 
   app.get('/audit', { preHandler: requireAuth() }, async () =>
     withScope(db, { platform: true }, (tx) => listAudit(tx, null)));

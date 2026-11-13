@@ -1,0 +1,27 @@
+# Строи APK файла на Android обвивката. Готовият файл се сваля от раздела „Actions“
+# (артефакт „qr-orders-device“) или от „Releases“, когато се пусне етикет v*.
+name: Android APK
+on:
+  push:
+    paths: ['android/**', '.github/workflows/android.yml']
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.10.2' }
+      - run: gradle -p android assembleRelease
+      - run: cp android/app/build/outputs/apk/release/app-release.apk qr-orders-device.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: qr-orders-device, path: qr-orders-device.apk }
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with: { files: qr-orders-device.apk }

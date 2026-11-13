@@ -33,12 +33,13 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.code(201).send(user);
   });
 
-  app.patch<{ Params: { id: string }; Body: { role?: Role; active?: boolean; reset2fa?: boolean } }>('/users/:id', {
+  app.patch<{ Params: { id: string }; Body: { role?: Role; active?: boolean; reset2fa?: boolean; password?: string } }>('/users/:id', {
     preHandler: requireAuth('users.manage'),
     schema: {
       params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } } },
       body: { type: 'object', additionalProperties: false, minProperties: 1, properties: {
         role: { type: 'string', enum: [...BUSINESS_ROLES] }, active: { type: 'boolean' }, reset2fa: { type: 'boolean' },
+        password: { type: 'string', maxLength: 200 },
       } },
     },
   }, async (req) => withScope(db, { businessId: bid(req) }, (tx) =>

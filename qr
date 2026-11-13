@@ -36,6 +36,9 @@ case "${1:-help}" in
     "${DC[@]}" start app
     echo "✔ Възстановено от $f" ;;
   setup-code) echo "Код за първоначална настройка: $SETUP_CODE" ;;
+  reset-admin)
+    email="${2:-}"; [ -n "$email" ] || { echo "Употреба: qr reset-admin имейл@домейн"; exit 1; }
+    "${DC[@]}" exec -T app apps/api/node_modules/.bin/tsx apps/api/src/cli/create-admin.ts "$email" ;;
   sftp-add)
     slug="${2:-}"; [[ "$slug" =~ ^[a-z0-9-]+$ ]] || { echo "Употреба: qr sftp-add <кратко-име-на-бизнеса>"; exit 1; }
     pass=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16)
@@ -61,6 +64,7 @@ QR поръчки — команди:
   qr restore ФАЙЛ        възстановяване от архив
   qr update              обновяване до нова версия (прави архив преди това)
   qr setup-code          показва кода за първоначална настройка
+  qr reset-admin ИМЕЙЛ   нова парола за главния администратор (при забравена парола/телефон)
   qr sftp-add БИЗНЕС     SFTP достъп за автоматичния импорт на артикули
 HELP
   ;;

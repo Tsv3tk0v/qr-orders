@@ -251,7 +251,7 @@ export async function listUsers(tx: Tx, businessId: string | null): Promise<Publ
   return rows;
 }
 
-export interface UserChange { role?: Role; active?: boolean; reset2fa?: boolean }
+export interface UserChange { role?: Role; active?: boolean; reset2fa?: boolean; password?: string }
 
 /**
  * Промяна от собственик: роля, активност, нулиране на 2FA.
@@ -262,20 +262,26 @@ export async function updateUser(
 ): Promise<PublicUser> {
   if (userId === actorId) throw new AuthError('cannot_change_self', 409);
   if (change.role && !BUSINESS_ROLES.includes(change.role as BusinessRole)) throw new AuthError('invalid_role', 400);
+  if (change.password !== undefined && change.password.length < MIN_PASSWORD_LENGTH) throw new AuthError('weak_password', 400);
+  const newHash = change.password ? await hashPassword(change.password) : null;
   const { rows } = await tx.query<PublicUser>(
     `UPDATE users SET role = coalesce($3, role), active = coalesce($4, active),
        totp_enabled = CASE WHEN $5 THEN false ELSE totp_enabled END,
        totp_secret_enc = CASE WHEN $5 THEN NULL ELSE totp_secret_enc END,
-       totp_last_step = CASE WHEN $5 THEN NULL ELSE totp_last_step END
+       totp_last_step = CASE WHEN $5 THEN NULL ELSE totp_last_step END,
+       password_hash = coalesce($6, password_hash),
+       failed_logins = CASE WHEN $6 IS NULL THEN failed_logins ELSE 0 END,
+       locked_until = CASE WHEN $6 IS NULL THEN locked_until ELSE NULL END
      WHERE id = $2 AND business_id = $1 RETURNING ${PUBLIC_USER_COLS}`,
-    [businessId, userId, change.role ?? null, change.active ?? null, change.reset2fa ?? false],
+    [businessId, userId, change.role ?? null, change.active ?? null, change.reset2fa ?? false, newHash],
   );
   const user = rows[0];
   if (!user) throw new AuthError('not_found', 404);
   // Всяка промяна на права или 2FA изхвърля потребителя от всички сесии.
   await tx.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
   await audit(tx, businessId, {
-    action: 'user.updated', actorId, targetType: 'user', targetId: userId, data: { ...change }, ip: meta.ip,
+    action: 'user.updated', actorId, targetType: 'user', targetId: userId,
+    data: { ...change, password: change.password ? '***' : undefined }, ip: meta.ip,
   });
   return user;
 }
@@ -295,4 +301,24 @@ export async function listAudit(tx: Tx, businessId: string | null, limit = 100, 
     [businessId, Math.min(Math.max(limit, 1), 500), beforeId ?? null],
   );
   return rows;
+}
+
+/**
+ * Нов достъп: създава потребителя или му задава нова парола, нулира 2FA, отключва и активира.
+ * Ползва се от админа на платформата (собственик на бизнес) и от командата qr reset-admin.
+ */
+export async function resetAccess(tx: Tx, businessId: string | null, email: string, password: string,
+  role: Role): Promise<PublicUser> {
+  if (password.length < MIN_PASSWORD_LENGTH) throw new AuthError('weak_password', 400);
+  const e = email.trim().toLowerCase();
+  const { rows } = await tx.query<PublicUser>(
+    `UPDATE users SET password_hash = $3, totp_enabled = false, totp_secret_enc = NULL, totp_last_step = NULL,
+       failed_logins = 0, locked_until = NULL, active = true, role = $4
+     WHERE business_id IS NOT DISTINCT FROM $1 AND email = $2 RETURNING ${PUBLIC_USER_COLS}`,
+    [businessId, e, await hashPassword(password), role]);
+  if (rows[0]) {
+    await tx.query('DELETE FROM sessions WHERE user_id = $1', [rows[0].id]);
+    return rows[0];
+  }
+  return insertUser(tx, businessId, { email: e, role, password });
 }
