@@ -14,7 +14,8 @@ export const ADMIN_HOST = `admin.${BASE}`;
 
 export async function makeApp(): Promise<{ app: FastifyInstance; db: Db }> {
   const db = createPool(TEST_DB_URL);
-  const app = await buildApp({ db, baseDomain: BASE, secretsKey: randomBytes(32), secureCookies: false });
+  const app = await buildApp({ db, baseDomain: BASE, secretsKey: randomBytes(32), secureCookies: false,
+    qrSecret: 'test-qr-secret', contactKey: 'test-contact-key', setupCode: 'TEST-SETUP', rateLimitScale: 1000 });
   return { app, db };
 }
 
@@ -38,7 +39,15 @@ export async function seedPlatformAdmin(db: Db) {
 
 /** Клиент с бисквитки, който праща правилния Host и Origin. */
 export class Client {
-  cookie = '';
+  jar = new Map<string, string>();
+  get cookie() { return [...this.jar].map(([k, v]) => `${k}=${v}`).join('; '); }
+  set cookie(v: string) {
+    this.jar.clear();
+    for (const part of v.split(';')) {
+      const [k, ...rest] = part.trim().split('=');
+      if (k) this.jar.set(k, rest.join('='));
+    }
+  }
   constructor(private app: FastifyInstance, public host: string) {}
 
   async req(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', url: string, body?: unknown,
@@ -47,8 +56,8 @@ export class Client {
       method, url, payload: body as object | Buffer | undefined,
       headers: { host: this.host, origin: `https://${this.host}`, cookie: this.cookie, ...headers },
     });
-    const set = res.cookies.find((c) => c.name === 'sid');
-    if (set) this.cookie = set.value ? `sid=${set.value}` : '';
+    for (const c of res.cookies) this.jar.set(c.name, c.value);
+    for (const [k, v] of [...this.jar]) if (!v) this.jar.delete(k);
     return res;
   }
   get(url: string) { return this.req('GET', url); }

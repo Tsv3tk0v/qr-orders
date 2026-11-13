@@ -14,4 +14,6 @@ export const env = {
   get migrationDatabaseUrl() { return required('MIGRATION_DATABASE_URL'); },
   get baseDomain() { return required('BASE_DOMAIN'); },
   get secretsKey() { return required('SECRETS_KEY'); },
+  get qrSecret() { return required('QR_TOKEN_SECRET'); },
+  get contactKey() { return required('CONTACT_HASH_KEY'); },
 };

@@ -12,11 +12,24 @@ import { BrandError, settingsRoutes } from './routes/settings';
 import { NotFound, publicMenu } from '../menu/repo';
 import { ImportSettingsError } from '../menu/import/apply';
 import { withScope } from '../db/pool';
+import { publicRoutes } from './routes/public';
+import { deviceRoutes } from './routes/device';
+import { opsRoutes } from './routes/ops';
+import { setupRoutes } from './routes/setup';
+import { OrderError } from '../orders/repo';
 
 export interface AppDeps {
   db: Db;
   baseDomain: string;
   secretsKey: Buffer;
+  /** Подпис на въртящия се QR. */
+  qrSecret: string;
+  /** Ключ за HMAC на клиентите (черен списък). */
+  contactKey: string;
+  /** Код за първоначална настройка; празен = настройката е изключена. */
+  setupCode?: string;
+  /** Множител на лимитите за заявки (тестовете идват от един IP). */
+  rateLimitScale?: number;
   /** false само за локална разработка по http. */
   secureCookies: boolean;
   /** Брой проксита пред приложението (за истинския IP). */
@@ -85,7 +98,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const adminHost = platformHostname(deps.baseDomain);
 
   app.addHook('onRequest', async (req, reply) => {
-    if (req.url === '/api/health') return;
+    if (req.url === '/api/health' || req.url.startsWith('/api/internal/') || req.url.startsWith('/assets/')) return;
     const host = normalizeHostname(req.headers.host ?? '');
 
     // Защита от CSRF: заявките, които променят, трябва да идват от същия хост.
@@ -118,6 +131,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     if ((err as { validation?: unknown }).validation) {
       return reply.code(400).send({ error: 'validation', message: (err as Error).message });
     }
+    if (err instanceof OrderError) return reply.code(err.status).send({ error: err.code });
     if (err instanceof NotFound) return reply.code(404).send({ error: 'not_found' });
     if (err instanceof BrandError) return reply.code(400).send({ error: 'invalid_brand', issues: err.issues });
     if (err instanceof ImportSettingsError) return reply.code(400).send({ error: err.message });
@@ -135,6 +149,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   app.get('/api/health', async () => ({ ok: true }));
+
+  /** Caddy пита тук, преди да издаде сертификат за поддомейн (on-demand TLS). */
+  app.get<{ Querystring: { domain?: string } }>('/api/internal/tls-check', async (req, reply) => {
+    const domain = normalizeHostname(req.query.domain ?? '');
+    if (domain === adminHost || domain === normalizeHostname(deps.baseDomain)) return { ok: true };
+    const found = await withScope(deps.db, { anonymous: true }, (tx) =>
+      tx.query('SELECT 1 FROM domains WHERE hostname = $1', [domain]));
+    return found.rows.length ? { ok: true } : reply.code(404).send({ ok: false });
+  });
 
   /** Публичен контекст за интерфейса: марка, тема, езици, обект. */
   app.get('/api/context', async (req) => {
@@ -167,6 +190,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await app.register(authRoutes, { prefix: '/api/auth' });
+  await app.register(publicRoutes, { prefix: '/api' });
+  await app.register(deviceRoutes, { prefix: '/api/device' });
+  await app.register(opsRoutes, { prefix: '/api/admin' });
+  await app.register(setupRoutes, { prefix: '/api/setup' });
   await app.register(menuRoutes, { prefix: '/api/admin/menu' });
   await app.register(settingsRoutes, { prefix: '/api/admin/settings' });
   await app.register(adminRoutes, { prefix: '/api/admin' });
