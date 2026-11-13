@@ -16,9 +16,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: '8.10.2' }
+      # Android SDK вече е инсталиран на сървърите на GitHub (ANDROID_HOME).
       - run: gradle -p android assembleRelease
       - run: cp android/app/build/outputs/apk/release/app-release.apk qr-orders-device.apk
       - uses: actions/upload-artifact@v4
