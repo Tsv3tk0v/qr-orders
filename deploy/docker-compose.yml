@@ -71,7 +71,8 @@ services:
 
   # По избор: SFTP за автоматичния импорт (включва се с ./qr sftp-add).
   sftp:
-    image: atmoz/sftp:alpine
+    build: ./sftp
+    image: qr-orders-sftp:latest
     restart: unless-stopped
     profiles: ["sftp"]
     ports:
