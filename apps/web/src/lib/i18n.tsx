@@ -11,7 +11,7 @@ const bg = {
   'common.online': 'На линия', 'common.offline': 'Няма връзка', 'common.live': 'На живо', 'common.done': 'Готово',
   'common.saved': 'Запазено', 'common.all': 'Всички', 'common.none': '—', 'common.optional': 'по избор',
   'common.minutes': 'мин', 'common.total': 'Общо', 'common.confirmDelete': 'Сигурни ли сте?',
-  'common.copy': 'Копирай', 'common.print': 'Печат', 'common.refresh': 'Обнови',
+  'common.copy': 'Копирай', 'common.print': 'Печат', 'common.refresh': 'Обнови', 'common.upload': 'Качи снимка',
   // клиент
   'cust.pickup': 'Вземане от гишето', 'cust.readyIn': 'готово за {min} мин',
   'cust.scanned': 'Сканирахте кода в обекта', 'cust.left': 'още {time}',
@@ -180,6 +180,8 @@ const bg = {
   'err.conflict': 'Вече съществува.', 'err.invalid_setup_code': 'Грешен код за настройка.', 'err.already_set_up': 'Настройката вече е направена.',
   'err.bad_transition': 'Поръчката вече е променена от друго устройство.', 'err.location_closed': 'Обектът не приема поръчки в момента.',
   'err.cannot_change_self': 'Не можете да промените собствения си профил оттук.', 'err.not_found': 'Не е намерено.',
+  'err.unsupported_image': 'Изберете снимка PNG, JPEG или WebP.', 'err.file_too_large': 'Файлът е твърде голям (до 2 MB).',
+  'loc.app': 'Приложение за таблетите', 'loc.appHint': 'Сканирайте кода с таблета или отворете адреса в браузъра му, за да свалите приложението (Android).',
   'err.location_required': 'Отворете адреса на конкретния обект.', 'err.invalid_reference': 'Невалидна връзка към друг запис.',
 };
 
@@ -192,7 +194,7 @@ const en: Dict = {
   'common.online': 'Online', 'common.offline': 'Offline', 'common.live': 'Live', 'common.done': 'Done',
   'common.saved': 'Saved', 'common.all': 'All', 'common.none': '—', 'common.optional': 'optional',
   'common.minutes': 'min', 'common.total': 'Total', 'common.confirmDelete': 'Are you sure?',
-  'common.copy': 'Copy', 'common.print': 'Print', 'common.refresh': 'Refresh',
+  'common.copy': 'Copy', 'common.print': 'Print', 'common.refresh': 'Refresh', 'common.upload': 'Upload image',
   'cust.pickup': 'Pick up at the counter', 'cust.readyIn': 'ready in {min} min',
   'cust.scanned': 'You scanned the code in store', 'cust.left': '{time} left',
   'cust.scanToOrder': 'Scan the QR code in the store to order.',
@@ -342,6 +344,8 @@ const en: Dict = {
   'err.conflict': 'Already exists.', 'err.invalid_setup_code': 'Wrong setup code.', 'err.already_set_up': 'Setup is already done.',
   'err.bad_transition': 'The order was already changed on another device.', 'err.location_closed': 'This location is not taking orders now.',
   'err.cannot_change_self': 'You cannot change your own profile here.', 'err.not_found': 'Not found.',
+  'err.unsupported_image': 'Choose a PNG, JPEG or WebP image.', 'err.file_too_large': 'The file is too large (max 2 MB).',
+  'loc.app': 'Tablet app', 'loc.appHint': 'Scan the code with the tablet or open the address in its browser to download the app (Android).',
   'err.location_required': 'Open the address of a specific location.', 'err.invalid_reference': 'Invalid reference to another record.',
 };
 

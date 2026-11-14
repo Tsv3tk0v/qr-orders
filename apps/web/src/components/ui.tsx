@@ -2,6 +2,7 @@ import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttribute
 import QRCode from 'qrcode';
 import { LOCALES, type Locale } from '@qr/shared';
 import { useI18n } from '../lib/i18n';
+import { api } from '../lib/api';
 
 type BtnKind = 'primary' | 'accent' | 'ghost' | 'danger' | 'success';
 export function Button({ kind = 'primary', big, className = '', ...p }:
@@ -142,4 +143,27 @@ export function Clock() {
 export function LiveDot({ online }: { online: boolean }) {
   const { t } = useI18n();
   return <span className={`live ${online ? 'is-on' : ''}`}><i />{online ? t('common.online') : t('common.offline')}</span>;
+}
+
+/** Качване на снимка от компютъра/телефона (PNG, JPEG, WebP до 2 MB) → адрес /media/… */
+export function ImageUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const { t, err } = useI18n();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  return (
+    <div className="image-upload">
+      {value && <img src={value} alt="" />}
+      <label className="btn btn-ghost btn-sm">
+        {busy ? t('common.loading') : `📷 ${t('common.upload')}`}
+        <input type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={busy} onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setBusy(true); setError('');
+          try { onChange((await api.uploadImage(f)).url); } catch (x) { setError(err(x)); } finally { setBusy(false); e.target.value = ''; }
+        }} />
+      </label>
+      {value && <button type="button" className="link-btn" onClick={() => onChange('')}>{t('common.delete')}</button>}
+      {error && <span className="danger small">{error}</span>}
+    </div>
+  );
 }

@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { useLoad } from '../lib/hooks';
 import { useI18n, type TKey } from '../lib/i18n';
 import { applyBrand } from '../lib/theme';
-import { Button, ErrorBox, Field, Input, Notice, Segmented, Toggle } from '../components/ui';
+import { Button, ErrorBox, Field, ImageUpload, Input, Notice, QrCode, Segmented, Toggle } from '../components/ui';
 import type { BusinessCtx } from '../App';
 
 interface LocationRow {
@@ -82,8 +82,8 @@ function AppearanceForm({ initial, versions, onPublished, businessName }:
             <h2>{t('look.theme')}</h2>
             <Segmented value={theme} onChange={setTheme} options={[{ value: 'light', label: t('look.theme.light') }, { value: 'classic', label: t('look.theme.classic') }]} />
             <h2>🖼 {t('look.logos')}</h2>
-            <Field label={t('look.logoDark')}><Input value={brand.logoDarkUrl ?? ''} placeholder="https://…" onChange={(e) => setBrand({ ...brand, logoDarkUrl: e.target.value || undefined })} /></Field>
-            <Field label={t('look.logoLight')}><Input value={brand.logoLightUrl ?? ''} placeholder="https://…" onChange={(e) => setBrand({ ...brand, logoLightUrl: e.target.value || undefined })} /></Field>
+            <Field label={t('look.logoDark')}><ImageUpload value={brand.logoDarkUrl ?? ''} onChange={(u) => setBrand({ ...brand, logoDarkUrl: u || undefined })} /></Field>
+            <Field label={t('look.logoLight')}><ImageUpload value={brand.logoLightUrl ?? ''} onChange={(u) => setBrand({ ...brand, logoLightUrl: u || undefined })} /></Field>
           </div>
           <div className="card form-grid">
             <h2>🌐 {t('look.languages')}</h2>
@@ -166,10 +166,19 @@ export function Locations() {
     setCode({ deviceId: id, code: r.pairingCode }); reloadDevices();
   };
   const scheme = location.protocol;
+  const apkUrl = `${location.origin}/app/qr-orders-device.apk`;
   return (
     <div className="page">
       <h1>{t('loc.title')}</h1>
       <ErrorBox error={error} />
+      <div className="card row">
+        <QrCode value={apkUrl} size={110} />
+        <div className="grow">
+          <h2>📱 {t('loc.app')}</h2>
+          <p className="muted small">{t('loc.appHint')}</p>
+          <a className="mono small" href={apkUrl}>{apkUrl}</a>
+        </div>
+      </div>
       {data?.locations.map((l) => {
         const base = l.hostname ? `${scheme}//${l.hostname}${location.port ? `:${location.port}` : ''}` : location.origin;
         return (

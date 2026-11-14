@@ -16,6 +16,7 @@ import { publicRoutes } from './routes/public';
 import { deviceRoutes } from './routes/device';
 import { opsRoutes } from './routes/ops';
 import { setupRoutes } from './routes/setup';
+import { mediaRoutes } from './routes/media';
 import { OrderError } from '../orders/repo';
 
 export interface AppDeps {
@@ -127,6 +128,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof AuthError) return reply.code(err.status).send({ error: err.code });
+    if ((err as { code?: string }).code === 'FST_ERR_CTP_BODY_TOO_LARGE') return reply.code(413).send({ error: 'file_too_large' });
     if (err instanceof ValidationError) return reply.code(400).send({ error: 'validation', message: err.message });
     if ((err as { validation?: unknown }).validation) {
       return reply.code(400).send({ error: 'validation', message: (err as Error).message });
@@ -195,6 +197,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(deviceRoutes, { prefix: '/api/device' });
   await app.register(opsRoutes, { prefix: '/api/admin' });
   await app.register(setupRoutes, { prefix: '/api/setup' });
+  await app.register(mediaRoutes);
   await app.register(menuRoutes, { prefix: '/api/admin/menu' });
   await app.register(settingsRoutes, { prefix: '/api/admin/settings' });
   await app.register(adminRoutes, { prefix: '/api/admin' });

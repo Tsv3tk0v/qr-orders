@@ -1,5 +1,5 @@
-# Строи APK файла на Android обвивката. Готовият файл се сваля от раздела „Actions“
-# (артефакт „qr-orders-device“) или от „Releases“, когато се пусне етикет v*.
+# Строи APK файла на Android обвивката и го слага в apps/web/public/app/, за да го
+# предлага самата система на адрес /app/qr-orders-device.apk (без нужда от GitHub на таблета).
 name: Android APK
 on:
   push:
@@ -21,6 +21,15 @@ jobs:
       # Android SDK вече е инсталиран на сървърите на GitHub (ANDROID_HOME).
       - run: gradle -p android assembleRelease
       - run: cp android/app/build/outputs/apk/release/app-release.apk qr-orders-device.apk
+      - name: Сложи APK в уеб приложението
+        if: startsWith(github.ref, 'refs/heads/')
+        run: |
+          mkdir -p apps/web/public/app
+          cp qr-orders-device.apk apps/web/public/app/qr-orders-device.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/public/app/qr-orders-device.apk
+          git diff --cached --quiet || (git commit -m "APK на Android обвивката (автоматично)" && git push)
       - uses: actions/upload-artifact@v4
         with: { name: qr-orders-device, path: qr-orders-device.apk }
       - if: startsWith(github.ref, 'refs/tags/v')

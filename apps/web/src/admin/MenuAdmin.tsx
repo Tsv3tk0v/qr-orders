@@ -3,7 +3,7 @@ import { ALLERGENS, type I18nText } from '@qr/shared';
 import { api } from '../lib/api';
 import { useLoad } from '../lib/hooks';
 import { useI18n, type TKey } from '../lib/i18n';
-import { Button, ErrorBox, Field, Input, ItemImage, Notice, PriceInput, Segmented, Toggle } from '../components/ui';
+import { Button, ErrorBox, Field, ImageUpload, Input, ItemImage, Notice, PriceInput, Segmented, Toggle } from '../components/ui';
 
 interface Category { id: string; name: I18nText; importKey: string | null; visible: boolean; position: number; createdByImport: boolean; itemCount: number }
 interface Component { id: string; name: I18nText; addonPriceCents: number | null; removable: boolean }
@@ -148,7 +148,7 @@ function ItemEditor({ item, cats, comps, onSaved, onDeleted }:
           onChange={(e) => setF({ ...f, prepMinutes: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
       </div>
       <I18nInputs area value={f.description} onChange={(description) => setF({ ...f, description })} labels={['menu.descBg', 'menu.descEn']} />
-      <Field label={t('menu.image')}><Input value={f.imageUrl} placeholder="https://…" onChange={(e) => setF({ ...f, imageUrl: e.target.value })} /></Field>
+      <Field label={t('menu.image')}><ImageUpload value={f.imageUrl} onChange={(imageUrl) => setF({ ...f, imageUrl })} /></Field>
       <div className="row">
         <Toggle checked={f.visible} onChange={(visible) => setF({ ...f, visible })} label={t('menu.visible')} />
         <Toggle checked={f.badgeHit} onChange={(badgeHit) => setF({ ...f, badgeHit })} label={t('menu.hit')} />

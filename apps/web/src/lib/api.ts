@@ -21,6 +21,7 @@ export const api = {
   put: <T>(url: string, body: unknown) => call<T>('PUT', url, body),
   patch: <T>(url: string, body: unknown) => call<T>('PATCH', url, body),
   del: <T>(url: string) => call<T>('DELETE', url),
+  uploadImage: (file: File) => call<{ url: string }>('POST', '/api/admin/media', undefined, { data: file, type: file.type }),
   upload: <T>(url: string, file: File) =>
     call<T>('POST', url, undefined, { data: file, type: file.name.endsWith('.xlsx')
       ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv' }),

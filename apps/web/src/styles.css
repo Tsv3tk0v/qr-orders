@@ -332,3 +332,6 @@ textarea.input { resize: vertical; }
   .ticket-num { font-size: 72px; font-weight: 900; }
   @page { size: 80mm auto; margin: 4mm; }
 }
+.image-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.image-upload img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; background: var(--surface); }
+.image-upload label { cursor: pointer; }
