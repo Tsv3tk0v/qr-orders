@@ -22,7 +22,7 @@ jobs:
       - run: gradle -p android assembleRelease
       - run: cp android/app/build/outputs/apk/release/app-release.apk qr-orders-device.apk
       - name: Сложи APK в уеб приложението
-        if: startsWith(github.ref, 'refs/heads/')
+        if: startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/main'
         run: |
           mkdir -p apps/web/public/app
           cp qr-orders-device.apk apps/web/public/app/qr-orders-device.apk
