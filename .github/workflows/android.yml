@@ -1,0 +1,37 @@
+# Строи APK файла на Android обвивката и го слага в apps/web/public/app/, за да го
+# предлага самата система на адрес /app/qr-orders-device.apk (без нужда от GitHub на таблета).
+name: Android APK
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.10.2' }
+      # Android SDK вече е инсталиран на сървърите на GitHub (ANDROID_HOME).
+      - run: gradle -p android assembleRelease
+      - run: cp android/app/build/outputs/apk/release/app-release.apk qr-orders-device.apk
+      - name: Сложи APK в уеб приложението
+        if: startsWith(github.ref, 'refs/heads/')
+        run: |
+          mkdir -p apps/web/public/app
+          cp qr-orders-device.apk apps/web/public/app/qr-orders-device.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/public/app/qr-orders-device.apk
+          git diff --cached --quiet || (git commit -m "APK на Android обвивката (автоматично)" && git push)
+      - uses: actions/upload-artifact@v4
+        with: { name: qr-orders-device, path: qr-orders-device.apk }
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with: { files: qr-orders-device.apk }

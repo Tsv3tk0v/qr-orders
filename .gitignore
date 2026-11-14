@@ -7,3 +7,7 @@ dist/
 .DS_Store
 android/**/build/
 android/.gradle/
+apps/web/dist/
+backups/
+data/
+server.env

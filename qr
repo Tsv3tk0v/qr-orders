@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Управление на „QR поръчки“. Напишете:  qr help
+set -euo pipefail
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+cd "$ROOT"
+[ -f server.env ] || { echo "Липсва server.env — първо пуснете:  sudo bash install.sh"; exit 1; }
+set -a; . ./server.env; set +a
+DC=(docker compose -f deploy/docker-compose.yml --env-file server.env)
+PROFILES=(); [ -f data/sftp/users.conf ] && PROFILES=(--profile sftp)
+
+case "${1:-help}" in
+  start)
+    BUILD=(--build); [ "${QR_SKIP_BUILD:-0}" = "1" ] && BUILD=()
+    "${DC[@]}" "${PROFILES[@]}" up -d "${BUILD[@]}" ;;
+  stop)    "${DC[@]}" "${PROFILES[@]}" stop ;;
+  restart) "${DC[@]}" "${PROFILES[@]}" restart ;;
+  status)  "${DC[@]}" "${PROFILES[@]}" ps; echo; "$0" health && echo "✔ Системата работи" || echo "✘ Системата не отговаря (вижте: qr logs)" ;;
+  health)  "${DC[@]}" exec -T app node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ;;
+  logs)    "${DC[@]}" "${PROFILES[@]}" logs --tail=200 -f "${2:-app}" ;;
+  update)
+    if [ -d .git ]; then git pull --ff-only; fi
+    "$0" backup
+    "${DC[@]}" "${PROFILES[@]}" up -d --build
+    echo "✔ Обновено" ;;
+  backup)
+    f="backups/qr-$(date +%F-%H%M).sql.gz"
+    "${DC[@]}" exec -T db pg_dump -U postgres qr | gzip > "$f"
+    echo "✔ Архив: $ROOT/$f" ;;
+  restore)
+    f="${2:-}"; [ -f "$f" ] || { echo "Употреба: qr restore backups/qr-ДАТА.sql.gz"; exit 1; }
+    read -rp "Това ЗАМЕНЯ всички текущи данни с архива. Сигурни ли сте? (да/не): " a
+    [ "$a" = "да" ] || exit 1
+    "${DC[@]}" stop app
+    "${DC[@]}" exec -T db psql -U postgres -c "DROP DATABASE IF EXISTS qr WITH (FORCE)" -c "CREATE DATABASE qr OWNER qr"
+    gunzip -c "$f" | "${DC[@]}" exec -T db psql -q -U postgres qr
+    "${DC[@]}" start app
+    echo "✔ Възстановено от $f" ;;
+  setup-code) echo "Код за първоначална настройка: $SETUP_CODE" ;;
+  reset-admin)
+    email="${2:-}"; [ -n "$email" ] || { echo "Употреба: qr reset-admin имейл@домейн"; exit 1; }
+    "${DC[@]}" exec -T app apps/api/node_modules/.bin/tsx apps/api/src/cli/create-admin.ts "$email" ;;
+  sftp-add)
+    slug="${2:-}"; [[ "$slug" =~ ^[a-z0-9-]+$ ]] || { echo "Употреба: qr sftp-add <кратко-име-на-бизнеса>"; exit 1; }
+    pass=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16)
+    mkdir -p data/sftp/keys "data/import/$slug"/{import,history,errors}
+    chown root:root data/import "data/import/$slug" && chmod 755 data/import "data/import/$slug"
+    chown -R 1000:1000 "data/import/$slug"/{import,history,errors}
+    touch data/sftp/users.conf
+    grep -v "^$slug:" data/sftp/users.conf > data/sftp/users.tmp || true
+    echo "$slug:$pass:1000:1000" >> data/sftp/users.tmp && mv data/sftp/users.tmp data/sftp/users.conf
+    "${DC[@]}" --profile sftp up -d sftp
+    echo "✔ SFTP за „$slug“:"
+    echo "   сървър: $(hostname -I | awk '{print $1}')   порт: 2222"
+    echo "   потребител: $slug   парола: $pass"
+    echo "   качвайте файловете в папка import/"
+    echo "Включете „Автоматичен импорт“ в админ панела → Импорт на артикули." ;;
+  *)
+    cat <<HELP
+QR поръчки — команди:
+  qr status              работи ли системата
+  qr logs                последните съобщения (Ctrl+C за изход)
+  qr start | stop | restart
+  qr backup              архив на базата сега (автоматично се прави всяка нощ в backups/)
+  qr restore ФАЙЛ        възстановяване от архив
+  qr update              обновяване до нова версия (прави архив преди това)
+  qr setup-code          показва кода за първоначална настройка
+  qr reset-admin ИМЕЙЛ   нова парола за главния администратор (при забравена парола/телефон)
+  qr sftp-add БИЗНЕС     SFTP достъп за автоматичния импорт на артикули
+HELP
+  ;;
+esac

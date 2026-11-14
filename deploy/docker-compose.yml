@@ -1,0 +1,81 @@
+# Пуска се от скрипта ./qr (не е нужно да се редактира).
+name: qr-orders
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PG_SUPERUSER_PASSWORD}
+      POSTGRES_DB: qr
+      QR_OWNER_PASSWORD: ${QR_OWNER_PASSWORD}
+      QR_APP_PASSWORD: ${QR_APP_PASSWORD}
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d qr"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: ..
+    image: qr-orders-app:latest
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://qr_app:${QR_APP_PASSWORD}@db:5432/qr
+      MIGRATION_DATABASE_URL: postgres://qr:${QR_OWNER_PASSWORD}@db:5432/qr
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      SECRETS_KEY: ${SECRETS_KEY}
+      QR_TOKEN_SECRET: ${QR_TOKEN_SECRET}
+      CONTACT_HASH_KEY: ${CONTACT_HASH_KEY}
+      SETUP_CODE: ${SETUP_CODE}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      INSECURE_COOKIES: ${INSECURE_COOKIES:-0}
+      IMPORT_ROOT: /import
+      TRUST_PROXY: "1"
+    volumes:
+      - ../data/import:/import
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
+      - ../data/caddy:/data
+
+  # Дневен архив на базата в ../backups (пази последните 14 дни).
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGPASSWORD: ${PG_SUPERUSER_PASSWORD}
+      TZ: Europe/Sofia
+    volumes:
+      - ../backups:/backups
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: ["/bin/sh", "/backup.sh"]
+
+  # По избор: SFTP за автоматичния импорт (включва се с ./qr sftp-add).
+  sftp:
+    image: atmoz/sftp:alpine
+    restart: unless-stopped
+    profiles: ["sftp"]
+    ports:
+      - "2222:22"
+    volumes:
+      - ../data/import:/home
+      - ../data/sftp/users.conf:/etc/sftp/users.conf:ro
+      - ../data/sftp/keys:/etc/ssh/keys

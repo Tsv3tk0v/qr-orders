@@ -1,0 +1,25 @@
+# HTTPS за всеки поддомейн автоматично (Let's Encrypt), само за познатите на системата адреси.
+{
+	email {$ACME_EMAIL}
+	on_demand_tls {
+		ask http://app:3000/api/internal/tls-check
+	}
+}
+
+{$BASE_DOMAIN} {
+	tls {
+		on_demand
+	}
+	redir https://admin.{$BASE_DOMAIN}{uri}
+}
+
+https:// {
+	tls {
+		on_demand
+	}
+	encode gzip
+	reverse_proxy app:3000 {
+		# Живите обновления (SSE) не се буферират (реш. 19).
+		flush_interval -1
+	}
+}
