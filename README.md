@@ -4,11 +4,13 @@
 
 ## Инсталация (без ИТ познания)
 
-На сървър с Ubuntu:
+На сървър с Ubuntu — една команда:
 
 ```
-git clone https://github.com/tsv3tk0v/qr-orders.git && cd qr-orders && sudo bash install.sh
+curl -fsSL https://raw.githubusercontent.com/Tsv3tk0v/qr-orders/main/install.sh | sudo bash
 ```
+
+Или без никакви команди: при създаване на сървъра в полето „User data“ (cloud-init) — виж ръководството.
 
 Подробно, стъпка по стъпка: **[docs/INSTALL.md](docs/INSTALL.md)**. Управление след това: `qr help`.
 

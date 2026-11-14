@@ -78,6 +78,7 @@
 - [x] Етап 9 — дневен имейл (`apps/api/src/jobs.ts`), имейл при грешка в импорта, админ екрани.
 - [x] Снимки и лога: качване от админа (`0005_media.sql`, `/api/admin/media`, показване на `/media/<id>`), само PNG/JPEG/WebP до 2 MB.
 - [x] APK: GitHub Actions го строи и слага в `apps/web/public/app/`; системата го предлага на `/app/qr-orders-device.apk` (QR в „Обекти и устройства“).
+- [x] Инсталация с една команда (`curl … install.sh | sudo bash`, сваля проекта в /opt/qr-orders) или напълно без въпроси през cloud-init (`QR_DOMAIN`, `QR_EMAIL`, `QR_SETUP_CODE`). Хранилището е публично — без токени.
 - [x] Инсталация: `install.sh`, `qr`, `deploy/` (Docker, Caddy с on-demand HTTPS, нощен архив, SFTP по избор),
   `docs/INSTALL.md`. Проверено в Docker: инсталатор → пълен сценарий в браузър → архив/възстановяване → SFTP импорт.
 
