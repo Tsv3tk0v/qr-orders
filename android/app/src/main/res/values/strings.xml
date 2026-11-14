@@ -2,11 +2,11 @@
 <resources>
     <string name="app_name">QR поръчки — устройство</string>
     <string name="setup_title">Настройка на устройството</string>
-    <string name="setup_url">Адрес на обекта (напр. https://donerdvor.poruchki.bg)</string>
+    <string name="setup_url">Адрес на обекта (напр. https://donerdvor.poruchki.bg или http://192.168.1.20)</string>
     <string name="setup_pin">ПИН за изход (4 цифри)</string>
     <string name="setup_save">Запази и отвори</string>
     <string name="setup_exit">Изход от приложението</string>
-    <string name="setup_bad_url">Въведете адрес, който започва с https://</string>
+    <string name="setup_bad_url">Въведете адрес с https://, или http:// с адрес в локалната мрежа</string>
     <string name="setup_bad_pin">ПИН-ът трябва да е 4 цифри</string>
     <string name="pin_title">ПИН за настройки</string>
     <string name="pin_wrong">Грешен ПИН</string>

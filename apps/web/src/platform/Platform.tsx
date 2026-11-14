@@ -6,27 +6,31 @@ import { Button, ErrorBox, Field, Input, LangSwitch, Notice, Toggle } from '../c
 import { AuthGate } from '../admin/Login';
 
 export function Platform({ baseDomain }: { baseDomain: string }) {
-  const { data: status } = useLoad<{ needsSetup: boolean }>('/api/setup/status');
+  const { data: status } = useLoad<{ needsSetup: boolean; localMode: boolean }>('/api/setup/status');
   const [setupDone, setSetupDone] = useState(false);
   if (!status) return null;
-  if (status.needsSetup && !setupDone) return <Setup onDone={() => setSetupDone(true)} />;
+  // Офлайн режим: след настройката същият адрес вече е бизнесът → към админ панела.
+  if (status.needsSetup && !setupDone) return <Setup local={status.localMode}
+    onDone={() => (status.localMode ? location.assign('/admin') : setSetupDone(true))} />;
   return <AuthGate>{() => <Businesses baseDomain={baseDomain} />}</AuthGate>;
 }
 
-function Setup({ onDone }: { onDone: () => void }) {
+function Setup({ onDone, local }: { onDone: () => void; local: boolean }) {
   const { t } = useI18n();
-  const [f, setF] = useState({ code: '', email: '', password: '', name: '' });
+  const [f, setF] = useState({ code: '', email: '', password: '', name: '', businessName: '' });
   const [error, setError] = useState<unknown>(null);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null);
-    try { await api.post('/api/setup', f); onDone(); } catch (err) { setError(err); }
+    const { businessName, ...rest } = f;
+    try { await api.post('/api/setup', local ? f : rest); onDone(); } catch (err) { setError(err); }
   };
   return (
     <div className="auth-page">
       <div className="auth-top"><LangSwitch /></div>
       <form className="auth-card" onSubmit={submit}>
         <h1>{t('setup.title')}</h1>
-        <p className="muted">{t('setup.hint')}</p>
+        <p className="muted">{local ? t('setup.localHint') : t('setup.hint')}</p>
+        {local && <Field label={t('plat.name')}><Input required value={f.businessName} onChange={(e) => setF({ ...f, businessName: e.target.value })} /></Field>}
         <Field label={t('setup.code')}><Input className="mono" required value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
         <Field label={t('users.name')}><Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
         <Field label={t('auth.email')}><Input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>

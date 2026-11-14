@@ -77,7 +77,7 @@ class MainActivity : Activity() {
                 val u = url.text.toString().trim().trimEnd('/')
                 val p = pin.text.toString().trim()
                 when {
-                    !(u.startsWith("https://") || (u.startsWith("http://") && u.contains(".nip.io"))) ->
+                    !isAllowedUrl(u) ->
                         Toast.makeText(this@MainActivity, R.string.setup_bad_url, Toast.LENGTH_LONG).show()
                     !p.matches(Regex("\\d{4}")) -> Toast.makeText(this@MainActivity, R.string.setup_bad_pin, Toast.LENGTH_LONG).show()
                     else -> { prefs.edit().putString("url", u).putString("pin", p).apply(); showWeb() }
@@ -91,6 +91,16 @@ class MainActivity : Activity() {
             })
         }
         setContentView(box)
+    }
+
+    /** https навсякъде; http само в локалната мрежа (офлайн режим без домейн). */
+    private fun isAllowedUrl(u: String): Boolean {
+        if (u.startsWith("https://")) return true
+        if (!u.startsWith("http://")) return false
+        val host = android.net.Uri.parse(u).host ?: return false
+        val p = host.split(".").mapNotNull { it.toIntOrNull() }
+        val privateIp = p.size == 4 && (p[0] == 10 || (p[0] == 192 && p[1] == 168) || (p[0] == 172 && p[1] in 16..31))
+        return privateIp || host.endsWith(".local") || host.endsWith(".nip.io")
     }
 
     // --- Уеб екранът ---

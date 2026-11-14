@@ -35,6 +35,7 @@ services:
       SMTP_URL: ${SMTP_URL:-}
       MAIL_FROM: ${MAIL_FROM:-}
       INSECURE_COOKIES: ${INSECURE_COOKIES:-0}
+      LOCAL_MODE: ${LOCAL_MODE:-0}
       IMPORT_ROOT: /import
       TRUST_PROXY: "1"
     volumes:

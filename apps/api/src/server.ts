@@ -23,6 +23,7 @@ const app = await buildApp({
   qrSecret: env.qrSecret,
   contactKey: env.contactKey,
   setupCode: process.env.SETUP_CODE,
+  localMode: process.env.LOCAL_MODE === '1',
   secureCookies: secure,
   trustProxy: process.env.TRUST_PROXY !== '0',
   logger: true,

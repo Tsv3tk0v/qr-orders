@@ -3,7 +3,7 @@ import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest }
 import { can, DEFAULT_BRAND, normalizeHostname, permissionsOf, platformHostname, type Permission } from '@qr/shared';
 import type { Db } from '../db/pool';
 import { AuthError, getSession, type Meta, type Realm, type SessionUser } from '../auth/service';
-import { resolveHost, ValidationError, type Business, type Location } from '../tenancy/repo';
+import { resolveHost, resolveSingle, ValidationError, type Business, type Location } from '../tenancy/repo';
 import { authRoutes } from './routes/auth';
 import { adminRoutes } from './routes/admin';
 import { platformRoutes } from './routes/platform';
@@ -29,6 +29,8 @@ export interface AppDeps {
   contactKey: string;
   /** Код за първоначална настройка; празен = настройката е изключена. */
   setupCode?: string;
+  /** Офлайн режим: един бизнес, адрес по IP, без домейн и без интернет. */
+  localMode?: boolean;
   /** Множител на лимитите за заявки (тестовете идват от един IP). */
   rateLimitScale?: number;
   /** false само за локална разработка по http. */
@@ -116,10 +118,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       req.tenant = { kind: 'platform' };
       req.realm = { kind: 'platform' };
     } else {
-      const resolved = await resolveHost(deps.db, host);
-      if (!resolved) return reply.code(404).send({ error: 'unknown_host' });
-      req.tenant = { kind: 'business', ...resolved };
-      req.realm = { kind: 'business', businessId: resolved.business.id };
+      const resolved = (await resolveHost(deps.db, host)) ?? (deps.localMode ? await resolveSingle(deps.db) : null);
+      if (resolved) {
+        req.tenant = { kind: 'business', ...resolved };
+        req.realm = { kind: 'business', businessId: resolved.business.id };
+      } else if (deps.localMode) {
+        // Още няма бизнес → първоначалната настройка (на същия адрес).
+        req.tenant = { kind: 'platform' };
+        req.realm = { kind: 'platform' };
+      } else {
+        return reply.code(404).send({ error: 'unknown_host' });
+      }
     }
 
     const token = req.cookies[SESSION_COOKIE];
@@ -164,7 +173,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   /** Публичен контекст за интерфейса: марка, тема, езици, обект. */
   app.get('/api/context', async (req) => {
     const t = req.tenant;
-    if (t.kind === 'platform') return { kind: 'platform' };
+    if (t.kind === 'platform') return { kind: 'platform', localMode: Boolean(deps.localMode) };
     const { business: b, location: l } = t;
     return {
       kind: 'business',

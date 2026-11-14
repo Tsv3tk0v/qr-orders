@@ -2,11 +2,11 @@
 <resources>
     <string name="app_name">QR Orders — device</string>
     <string name="setup_title">Device setup</string>
-    <string name="setup_url">Location address (e.g. https://donerdvor.poruchki.bg)</string>
+    <string name="setup_url">Location address (e.g. https://donerdvor.poruchki.bg or http://192.168.1.20)</string>
     <string name="setup_pin">Exit PIN (4 digits)</string>
     <string name="setup_save">Save and open</string>
     <string name="setup_exit">Exit the app</string>
-    <string name="setup_bad_url">Enter an address starting with https://</string>
+    <string name="setup_bad_url">Enter an https:// address, or http:// with a local network address</string>
     <string name="setup_bad_pin">The PIN must be 4 digits</string>
     <string name="pin_title">Settings PIN</string>
     <string name="pin_wrong">Wrong PIN</string>

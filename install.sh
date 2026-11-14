@@ -60,11 +60,12 @@ echo
 # 2. Режим
 bold "Как ще работи системата?"
 echo "  1) В интернет — с ваш домейн и HTTPS (препоръчително; клиентите поръчват от мобилните си данни)"
-echo "  2) Проба в локалната мрежа — без домейн; работи само през WiFi-то на обекта"
+echo "  2) Без домейн и хостинг — този компютър е сървърът в обекта; работи и без интернет"
+echo "     (за киоск, кухня и табло в WiFi мрежата на обекта; QR от телефони само през същото WiFi)"
 MODE=$(ask "Изберете 1 или 2" "${QR_MODE:-1}")
 echo
 
-INSECURE=0; CADDYFILE=Caddyfile; ACME_EMAIL=""
+INSECURE=0; CADDYFILE=Caddyfile; ACME_EMAIL=""; LOCAL_MODE=0; LAN_IP=""
 if [ "$MODE" = "1" ]; then
   DOMAIN=$(ask "Вашият домейн (напр. poruchki.bg)" "${QR_DOMAIN:-}")
   DOMAIN=$(echo "$DOMAIN" | tr 'A-Z' 'a-z' | sed -e 's#^https\?://##' -e 's#/.*##' -e 's/^www\.//')
@@ -86,8 +87,8 @@ if [ "$MODE" = "1" ]; then
 else
   LAN_IP=$(hostname -I | awk '{print $1}')
   LAN_IP=$(ask "IP адрес на този компютър в мрежата" "$LAN_IP")
-  BASE_DOMAIN="$(echo "$LAN_IP" | tr '.' '-').nip.io"
-  INSECURE=1; CADDYFILE=Caddyfile.local
+  BASE_DOMAIN="local.invalid"
+  INSECURE=1; CADDYFILE=Caddyfile.local; LOCAL_MODE=1
 fi
 echo
 
@@ -114,6 +115,8 @@ BASE_DOMAIN=$BASE_DOMAIN
 ACME_EMAIL=$ACME_EMAIL
 CADDYFILE=$CADDYFILE
 INSECURE_COOKIES=$INSECURE
+LOCAL_MODE=$LOCAL_MODE
+LAN_IP=$LAN_IP
 PG_SUPERUSER_PASSWORD=$(rand 32)
 QR_OWNER_PASSWORD=$(rand 32)
 QR_APP_PASSWORD=$(rand 32)
@@ -146,8 +149,14 @@ SCHEME=https; [ "$INSECURE" = "1" ] && SCHEME=http
 echo
 bold "═══ Готово! ═══"
 echo
-echo "1. Отворете в браузър:   $SCHEME://admin.$BASE_DOMAIN"
+if [ "$LOCAL_MODE" = "1" ]; then
+  echo "1. От компютър или таблет в WiFi мрежата на обекта отворете:   http://$LAN_IP"
+  echo "   (За да не се сменя адресът: в рутера дайте на този компютър постоянен IP — „DHCP резервация“.)"
+else
+  echo "1. Отворете в браузър:   $SCHEME://admin.$BASE_DOMAIN"
+fi
 echo "2. Въведете кода за настройка:   $SETUP_CODE"
-echo "3. Създайте администратор, после — първия бизнес."
+if [ "$LOCAL_MODE" = "1" ]; then echo "3. Въведете името на обекта и създайте собственика."
+else echo "3. Създайте администратор, после — първия бизнес."; fi
 echo
 echo "Полезни команди:  qr status · qr logs · qr backup · qr update · qr help"
