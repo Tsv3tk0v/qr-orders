@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { createLitePool, isPgliteUrl } from './pglite';
 
 export type Db = pg.Pool;
 export type Tx = pg.PoolClient;
@@ -7,6 +8,7 @@ export type Tx = pg.PoolClient;
 export type Scope = { businessId: string } | { platform: true } | { anonymous: true };
 
 export function createPool(connectionString: string): Db {
+  if (isPgliteUrl(connectionString)) return createLitePool(connectionString);
   return new pg.Pool({ connectionString, max: 10 });
 }
 

@@ -1,0 +1,46 @@
+# Истинска инсталация с install.sh (офлайн режим, без въпроси) на Intel/AMD и на ARM64
+# (същата архитектура като Raspberry Pi 4/5). Проверява настройката, APK, SFTP и архива.
+name: Инсталация (x86 и ARM64)
+on:
+  push:
+    branches: ['**']
+    paths: ['install.sh', 'qr', 'deploy/**', 'Dockerfile', 'apps/**', 'packages/**', 'db/**', '.github/workflows/install-test.yml']
+  workflow_dispatch:
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Архитектура
+        run: uname -m
+      - name: Инсталация (вариант 2, без въпроси)
+        run: sudo QR_MODE=2 QR_SETUP_CODE=CI-TEST-2026 bash install.sh
+      - name: Системата отговаря
+        run: |
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1/api/health && break; sleep 2; done
+          curl -fsS http://127.0.0.1/api/setup/status | tee /dev/stderr | grep -q '"needsSetup":true'
+      - name: Първоначална настройка и APK
+        run: |
+          curl -fsS -X POST -H 'Origin: http://127.0.0.1' -H 'content-type: application/json' \
+            http://127.0.0.1/api/setup \
+            -d '{"code":"ci-test-2026","email":"owner@ci.bg","password":"много-дълга-парола","businessName":"CI обект"}'
+          curl -fsS http://127.0.0.1/api/context | tee /dev/stderr | grep -q '"kind":"business"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/app/qr-orders-device.apk)" = 200
+      - name: SFTP за импорта
+        run: |
+          sudo qr sftp-add local | tee sftp.txt
+          sudo apt-get install -y -qq sshpass >/dev/null
+          pass=$(sudo grep '^local:' data/sftp/users.conf | cut -d: -f2)
+          printf 'код;наименование;цена\n000001;Тест;1,00\n' > test.csv
+          for i in $(seq 1 20); do nc -z 127.0.0.1 2222 && break; sleep 2; done
+          echo 'put test.csv import/test.csv' | sshpass -p "$pass" sftp -oBatchMode=no -oStrictHostKeyChecking=no -P 2222 -b - local@127.0.0.1
+          sudo test -f data/import/local/import/test.csv
+      - name: Архив
+        run: sudo qr backup && ls -la backups
+      - name: Логове при грешка
+        if: failure()
+        run: sudo docker compose -f deploy/docker-compose.yml --env-file server.env --profile sftp logs --tail=100

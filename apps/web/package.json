@@ -10,6 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/inter": "5.1.1",
+    "@fontsource/manrope": "5.1.1",
+    "@fontsource/merriweather": "5.1.1",
     "@qr/shared": "workspace:*",
     "qrcode": "1.5.4",
     "react": "18.3.1",

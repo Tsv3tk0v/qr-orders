@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- http е позволен само за пробния режим в локалната мрежа (nip.io). -->
+<!-- http е нужен за офлайн режима: сървърът е компютър в WiFi мрежата на обекта (адрес по IP).
+     Приложението самo проверява, че http адресът е в локалната мрежа (виж MainActivity.isAllowedUrl). -->
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">nip.io</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

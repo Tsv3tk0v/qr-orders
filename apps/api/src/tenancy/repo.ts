@@ -148,3 +148,19 @@ export async function resolveHost(db: Db, host: string): Promise<ResolvedHost | 
     return { business, location: active.length === 1 ? active[0]! : null };
   });
 }
+
+/**
+ * Офлайн режим (един бизнес в обекта, без домейн): всеки адрес (напр. http://192.168.1.20)
+ * води към единствения активен бизнес и неговия обект. null, ако още няма бизнес.
+ */
+export async function resolveSingle(db: Db): Promise<ResolvedHost | null> {
+  const first = await withScope(db, { platform: true }, (tx) =>
+    tx.query<{ id: string }>(`SELECT id FROM businesses WHERE status = 'active' ORDER BY created_at LIMIT 1`));
+  const id = first.rows[0]?.id;
+  if (!id) return null;
+  return withScope(db, { businessId: id }, async (tx) => {
+    const b = await tx.query<Business>(`SELECT ${BUSINESS_COLS} FROM businesses WHERE id = $1`, [id]);
+    const active = (await listLocations(tx)).filter((l) => l.status === 'active');
+    return { business: b.rows[0]!, location: active[0] ?? null };
+  });
+}

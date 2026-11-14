@@ -1,13 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import pg from 'pg';
+import { createPool } from './pool';
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../db/migrations', import.meta.url));
 
 /** Пуска нови .sql файлове по ред на името, всеки в отделна транзакция. */
 export async function migrate(connectionString: string, log: (m: string) => void = () => {}): Promise<string[]> {
-  const client = new pg.Client({ connectionString });
-  await client.connect();
+  const pool = createPool(connectionString);
+  const client = await pool.connect();
   try {
     await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`);
@@ -35,7 +35,8 @@ export async function migrate(connectionString: string, log: (m: string) => void
     return applied;
   } finally {
     await client.query('SELECT pg_advisory_unlock(727274)').catch(() => {});
-    await client.end();
+    client.release();
+    await pool.end();
   }
 }
 

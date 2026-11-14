@@ -10,6 +10,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@electric-sql/pglite':
+        specifier: 0.2.17
+        version: 0.2.17
       '@fastify/cookie':
         specifier: ^11.0.1
         version: 11.1.5
@@ -56,6 +59,15 @@ importers:
 
   apps/web:
     dependencies:
+      '@fontsource/inter':
+        specifier: 5.1.1
+        version: 5.1.1
+      '@fontsource/manrope':
+        specifier: 5.1.1
+        version: 5.1.1
+      '@fontsource/merriweather':
+        specifier: 5.1.1
+        version: 5.1.1
       '@qr/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -190,6 +202,9 @@ packages:
   '@babel/types@7.29.14':
     resolution: {integrity: sha512-UjI/dKmwJwT9pOszJitq2G6EObZPnsZUfdCr92z2TlF3EZK9J3EdfOKUrCzHl6wFthbzwhzl1Soc/UIwxRiq6w==}
     engines: {node: '>=6.9.0'}
+
+  '@electric-sql/pglite@0.2.17':
+    resolution: {integrity: sha512-qEpKRT2oUaWDH6tjRxLHjdzMqRUGYDnGZlKrnL4dJ77JVMcP2Hpo3NYnOSPKdZdeec57B6QPprCUFg0picx5Pw==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -523,6 +538,15 @@ packages:
 
   '@fastify/static@8.3.0':
     resolution: {integrity: sha512-yKxviR5PH1OKNnisIzZKmgZSus0r2OZb8qCSbqmw34aolT4g3UlzYfeBRym+HJ1J471CR8e2ldNub4PubD1coA==}
+
+  '@fontsource/inter@5.1.1':
+    resolution: {integrity: sha512-weN3E+rq0Xb3Z93VHJ+Rc7WOQX9ETJPTAJ+gDcaMHtjft67L58sfS65rAjC5tZUXQ2FdZ/V1/sSzCwZ6v05kJw==}
+
+  '@fontsource/manrope@5.1.1':
+    resolution: {integrity: sha512-5Ry4+6hRxdE59aTUGu5jH4nFsILKyIdqIs7AtCGMfkOwGRxph/fQyOmE9CdU+4vQgaJBopB6XtL6CRg55Ew8Ag==}
+
+  '@fontsource/merriweather@5.1.1':
+    resolution: {integrity: sha512-GaO8ZHDCQAuoPJh0yiLK+NzL03OnGs64uFGKFRSouinZ1CtoEtO+3DHr4LZokFW+Au5MvWr4Am2MOhjdyvIRyA==}
 
   '@isaacs/cliui@9.0.0':
     resolution: {integrity: sha512-AokJm4tuBHillT+FpMtxQ60n8ObyXBatq7jD2/JA9dxbDDokKQm8KMht5ibGzLVU9IJDIKK4TPKgMHEYMn3lMg==}
@@ -2258,6 +2282,8 @@ snapshots:
       '@babel/helper-string-parser': 7.29.14
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@electric-sql/pglite@0.2.17': {}
+
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
 
@@ -2472,6 +2498,12 @@ snapshots:
       fastify-plugin: 5.1.0
       fastq: 1.20.3
       glob: 11.1.0
+
+  '@fontsource/inter@5.1.1': {}
+
+  '@fontsource/manrope@5.1.1': {}
+
+  '@fontsource/merriweather@5.1.1': {}
 
   '@isaacs/cliui@9.0.0': {}
 

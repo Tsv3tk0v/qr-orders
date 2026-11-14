@@ -161,7 +161,7 @@ const bg = {
   'rep.hour': 'Час на изпращане', 'rep.empty': 'Няма поръчки за периода',
   // платформа
   'setup.title': 'Първоначална настройка', 'setup.hint': 'Въведете кода за настройка от екрана на инсталатора и създайте главния администратор.',
-  'setup.code': 'Код за настройка', 'setup.create': 'Създай администратор', 'setup.done': 'Готово! Сега влезте с имейла и паролата си.',
+  'setup.code': 'Код за настройка', 'setup.localHint': 'Въведете името на обекта, кода за настройка от инсталатора и създайте собственика. Киоскът е включен; QR поръчките от телефони могат да се включат по-късно.', 'setup.create': 'Създай администратор', 'setup.done': 'Готово! Сега влезте с имейла и паролата си.',
   'plat.businesses': 'Бизнеси', 'plat.new': '+ Нов бизнес', 'plat.slug': 'Кратко име (за адреса: латински букви, цифри, тире)',
   'plat.name': 'Име на бизнеса', 'plat.owner': 'Имейл на собственика', 'plat.ownerPass': 'Временна парола на собственика',
   'plat.location': 'Първи обект', 'plat.locSlug': 'Кратко име на обекта', 'plat.locName': 'Име на обекта',
@@ -326,7 +326,7 @@ const en: Dict = {
   'rep.cancelled': 'Declined', 'rep.top': 'Best sellers', 'rep.qty': 'Qty', 'rep.dailyEmail': 'Daily email to owners',
   'rep.hour': 'Sending hour', 'rep.empty': 'No orders in this period',
   'setup.title': 'Initial setup', 'setup.hint': 'Enter the setup code shown by the installer and create the main administrator.',
-  'setup.code': 'Setup code', 'setup.create': 'Create administrator', 'setup.done': 'Done! Now sign in with your email and password.',
+  'setup.code': 'Setup code', 'setup.localHint': 'Enter the store name, the setup code from the installer and create the owner. The kiosk is on; QR ordering from phones can be enabled later.', 'setup.create': 'Create administrator', 'setup.done': 'Done! Now sign in with your email and password.',
   'plat.businesses': 'Businesses', 'plat.new': '+ New business', 'plat.slug': 'Short name (for the address: latin letters, digits, dash)',
   'plat.name': 'Business name', 'plat.owner': 'Owner email', 'plat.ownerPass': 'Owner temporary password',
   'plat.location': 'First location', 'plat.locSlug': 'Location short name', 'plat.locName': 'Location name',

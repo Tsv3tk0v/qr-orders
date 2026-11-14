@@ -12,6 +12,7 @@
     "create-admin": "tsx src/cli/create-admin.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "0.2.17",
     "@fastify/cookie": "^11.0.1",
     "@fastify/static": "^8.0.3",
     "@qr/shared": "workspace:*",

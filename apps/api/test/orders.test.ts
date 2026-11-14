@@ -265,7 +265,7 @@ describe('инсталация', () => {
     expect([201, 409]).toContain(first.statusCode); // 409, ако друг тест вече е създал админ
     expect((await p.post('/api/setup', { code: 'TEST-SETUP', email: 'x@b.bg', password: 'дълга-парола-1' })).statusCode)
       .toBe(409);
-    expect((await p.get('/api/setup/status')).json()).toEqual({ needsSetup: false });
+    expect((await p.get('/api/setup/status')).json()).toEqual({ needsSetup: false, localMode: false });
     // Настройката не е достъпна на поддомейн на бизнес.
     const { host } = await loggedIn(app, db);
     expect((await new Client(app, host).get('/api/setup/status')).statusCode).toBe(404);
